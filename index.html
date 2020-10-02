@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<head>
+  <link rel="stylesheet" type="text/css" href="treemap.css" />
+  <script rel="graphBuilder" type="text/javascript" src="treemap.js"></script>
+  <script type="text/javascript" src="https://d3js.org/d3.v6.js"></script>
+  <script src="https://d3js.org/d3-color.v2.min.js"></script>
+  <script src="https://d3js.org/d3-interpolate.v2.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v2.min.js"></script>
+</head>
+
+<title>TreeMap | Built With D3</title>
+<body>
+  <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+
+  <div id="header">
+    <ul id="navbar">
+      <li class="input-select">
+        <a href="https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/kickstarter-funding-data.json" target="_blank">Kickstarter Pledges: </a>
+        <button>See Graph</button>
+      </li>
+      <li class="input-select">
+        <a href="https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json" target="_blank">Movie Sales: </a>
+        <button>See Graph</button>
+      </li>
+      <li class="input-select">
+        <a href="https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json" target="_blank">Video Game Sales: </a>
+        <button>See Graph</button>
+      </li>
+    </ul>
+  </div>
+
+  <div id="content">
+    <div class="intro">
+      <h1 id="title">Video Games Sales</h1>
+      <p id ="description">The 100 Best Selling Video Games Grouped by Platform</p>
+    </div>
+
+    <div id="svg-container"></div>
+  </div>
+
+  <script>
+    //creating the svg container
+    var margin = { top: 5, right: 5, bottom: 55, left: 5};
+    var width = 1000-margin.left-margin.right;
+    var height = 600 - margin.top-margin.bottom;
+
+    var svg = d3.select("#svg-container")
+      .append("svg")
+        .attr("width", width+margin.left+margin.right)
+        .attr("height", height+margin.top)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + ", " + margin.right + ")");
+
+    //set up the tooltip
+    var tooltip = d3.selectAll("#svg-container")
+      .append("div")
+      .attr("class", "tooltip")
+      .attr("id", "tooltip")
+      .style("opacity", 0);
+
+    //read json data
+    d3.json("http://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json").then(function(data) {
+        console.log(data);
+
+        //give the data to the cluster layout
+        var root = d3.hierarchy(data).sum(function(d){return d.value})
+
+        //get array of console names
+        var consoleArray = data["children"].map(d => {return d.name;})
+        console.log(consoleArray);
+
+        //d3 treemap computes the position of each leaf
+        d3.treemap()
+          .size([width, height])
+          .padding(2)
+          (root)
+
+        //create the color scale
+        var color1 = d3.schemeRdPu[9];
+        var color2 = d3.schemeBuPu[9];
+        var colors = color1.concat(color2);
+        console.log(colors);
+
+        var color = d3.scaleOrdinal(colors)
+          .domain(consoleArray);
+
+        var legend = d3.select("#svg-container")
+          .append("svg")
+          .attr("id", "legend")
+          .attr("height", 50)
+          .attr("width", width+margin.left+margin.right);
+
+        legend.append("p")
+          .html("Console");
+
+        var bar = d3.select("#legend").selectAll("g")
+          .data(consoleArray)
+          .enter().append("g")
+          .attr("transform", (d,i) => {return "translate(" + 65 + "," + 10 + ")"});
+
+        bar.append("rect")
+          .attr("width", 30)
+          .attr("height", 20)
+          .attr("x", (d, i) => (i*50))
+          .attr("y", 0)
+          .attr("class", "legend-item")
+          .style("padding-left", "2px")
+          .style("padding-right", "1px")
+          .style("fill", d => {return color(d)});
+
+        bar.append("text")
+          .html(d=> {return d})
+          .attr("x", (d, i) => (i*50))
+          .attr("y", 35)
+          .style("padding-bottom", "2px")
+          .style("padding-right", "10px");
+
+
+        //use this information from the treemap to add rectangles
+        svg.selectAll("rect")
+          .data(root.leaves())
+          .enter()
+          .append("rect")
+            .attr("x", function(d){return d.x0;})
+            .attr("y", function(d){return d.y0;})
+            .attr("width", function(d){return d.x1-d.x0;})
+            .attr("height", function(d){return d.y1-d.y0;})
+            .attr("class", "tile")
+            .attr("data-name", d => {return d.data.name})
+            .attr("data-category", d => {return d.data.category})
+            .attr("data-value", d => {return d.data.value})
+            .style("stroke", "black")
+            .style("fill", d=> { return color(d.data.category);})
+          .on("mouseover", (event, d) => {
+            const [x,y] = d3.pointer(d.value);
+            tooltip.attr("data-value", event.currentTarget.getAttribute("data-value"));
+            tooltip.transition()
+              .duration(200)
+              .style("opacity", .9);
+            tooltip.html(d=> {return ("Console: " + event.currentTarget.getAttribute("data-category") + "<br>Game: " + event.currentTarget.getAttribute("data-name")+ "<br>Value: " + event.currentTarget.getAttribute("data-value"))})
+              .style("left", x + "px")
+              .style("top", y + "px");
+            })
+          .on("mouseout", function(event, d) {
+            tooltip.transition()
+            .duration(500)
+            .style("opacity", 0)
+          })
+
+
+        svg.selectAll("text")
+          .data(root.leaves())
+          .enter()
+          .append("text")
+            .attr("x", d => {return d.x0 + 5;})
+            .attr("y", d=> {return d.y0 + 20;})
+            .text(d=> {return d.data.name;})
+            .attr("font-size", "10px")
+            .attr("fill", "black")
+
+
+    });
+
+  </script>
+
+  <footer id="footer">
+    <p>Coded and Designed by Anne Thorsteinson 2020</p>
+  </footer>
+</body>
+
+</html>
