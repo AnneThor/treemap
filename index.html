@@ -131,11 +131,11 @@
             const [x,y] = d3.pointer(event);
             tooltip.attr("data-value", event.currentTarget.getAttribute("data-value"));
             tooltip.transition()
-              .duration(20)
+              .duration(200)
               .style("opacity", .9);
             tooltip.html(d=> {return ("Console: " + event.currentTarget.getAttribute("data-category") + "<br>Game: " + event.currentTarget.getAttribute("data-name")+ "<br>Value: " + event.currentTarget.getAttribute("data-value"))})
-              .style("left", x + "px")
-              .style("top", y+30 + "px");
+              .style("left", x+margin.left + "px")
+              .style("top", y+margin.bottom + "px");
             })
           .on("mouseout", function(event, d) {
             tooltip.transition()
