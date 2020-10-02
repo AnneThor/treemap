@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <head>
   <link rel="stylesheet" type="text/css" href="treemap.css" />
-  <script rel="graphBuilder" type="text/javascript" src="treemap.js"></script>
   <script type="text/javascript" src="https://d3js.org/d3.v6.js"></script>
   <script src="https://d3js.org/d3-color.v2.min.js"></script>
   <script src="https://d3js.org/d3-interpolate.v2.min.js"></script>
@@ -52,7 +51,7 @@
         .attr("transform", "translate(" + margin.left + ", " + margin.right + ")");
 
     //set up the tooltip
-    var tooltip = d3.selectAll("#svg-container")
+    var tooltip = d3.select("#svg-container")
       .append("div")
       .attr("class", "tooltip")
       .attr("id", "tooltip")
@@ -60,14 +59,12 @@
 
     //read json data
     d3.json("https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json").then(function(data) {
-        console.log(data);
 
         //give the data to the cluster layout
         var root = d3.hierarchy(data).sum(function(d){return d.value})
 
         //get array of console names
         var consoleArray = data["children"].map(d => {return d.name;})
-        console.log(consoleArray);
 
         //d3 treemap computes the position of each leaf
         d3.treemap()
@@ -79,7 +76,6 @@
         var color1 = d3.schemeRdPu[9];
         var color2 = d3.schemeBuPu[9];
         var colors = color1.concat(color2);
-        console.log(colors);
 
         var color = d3.scaleOrdinal(colors)
           .domain(consoleArray);
@@ -96,7 +92,7 @@
         var bar = d3.select("#legend").selectAll("g")
           .data(consoleArray)
           .enter().append("g")
-          .attr("transform", (d,i) => {return "translate(" + 65 + "," + 10 + ")"});
+          .attr("transform", (d,i) => {return "translate(" + 65 + "," + 0 + ")"});
 
         bar.append("rect")
           .attr("width", 30)
@@ -132,18 +128,18 @@
             .style("stroke", "black")
             .style("fill", d=> { return color(d.data.category);})
           .on("mouseover", (event, d) => {
-            const [x,y] = d3.pointer(d.value);
+            const [x,y] = d3.pointer(event);
             tooltip.attr("data-value", event.currentTarget.getAttribute("data-value"));
             tooltip.transition()
-              .duration(200)
+              .duration(20)
               .style("opacity", .9);
             tooltip.html(d=> {return ("Console: " + event.currentTarget.getAttribute("data-category") + "<br>Game: " + event.currentTarget.getAttribute("data-name")+ "<br>Value: " + event.currentTarget.getAttribute("data-value"))})
               .style("left", x + "px")
-              .style("top", y + "px");
+              .style("top", y+30 + "px");
             })
           .on("mouseout", function(event, d) {
             tooltip.transition()
-            .duration(500)
+            .duration(100)
             .style("opacity", 0)
           })
 
